@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=PVZGOTY-EN
+Exec=PVZGOTY-EN
+Icon=pvzgoty-en
+Terminal=false
+Categories=Game;
+StartupWMClass=PVZGOTY-EN

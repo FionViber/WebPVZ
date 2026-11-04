@@ -1,0 +1,51 @@
+name: Package release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  desktop:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [win32-x64, darwin-x64, darwin-arm64, linux-x64, linux-arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Recreate and verify desktop packages
+        run: python build/package.py '${{ matrix.target }}'
+      - name: Attach desktop packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload v1.0.0 out/*.zip --clobber
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Package protected web editions
+        run: python build/package.py web
+      - name: Attach web packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload v1.0.0 out/*.zip --clobber
+
+  publish:
+    needs: [desktop, web]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify assets, write checksums and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: python build/publish.py

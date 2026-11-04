@@ -33,7 +33,8 @@ English and Simplified Chinese desktop editions keep separate save folders. Do n
 - `docs/`: password-protected English browser edition, published with GitHub Pages.
 - `desktop/EN/` and `desktop/SC/`: Electron application source, game files and icons.
 - Release assets: desktop packages, protected web archives and `SHA256SUMS.txt`.
+- `build/`: reproducible packaging recipes; every desktop file is checked against its supplied SHA-256 hash.
 
 To run a desktop edition from source, open its folder, run `npm install`, then `npm start`. Both editions use Electron 45.2.2.
 
-PageCrypt 7.1.0 encrypts the browser entry pages. It does not encrypt the game assets or the desktop source. Passwords are not included in this repository. Desktop packages and the game's save handling retain the supplied behaviour. The `1.0.0` release number identifies this distribution.
+PageCrypt 7.1.0 encrypts the browser entry pages. It does not encrypt the game assets or the desktop source. Passwords are not included in this repository. Desktop package contents and the game's save handling retain the supplied behaviour. The `1.0.0` release number identifies this distribution.

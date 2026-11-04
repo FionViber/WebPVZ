@@ -1,0 +1,158 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noindex, nofollow"><title>Protected Page</title><script type="module">function parse(s) { return Uint8Array.from(atob(s), c => c.charCodeAt(0)); }
+function find(selector) {
+    const element = document.querySelector(selector);
+    if (element)
+        return element;
+    throw new Error('No element found with selector: ' + selector);
+}
+const pwd = find('#pwd');
+const msg = find('#msg');
+const form = find('form');
+const togglePassword = find('#toggle-password');
+const unlock = find('#unlock');
+const languageSelect = find('#language');
+const messages = {
+    en: {
+        title: 'Protected Page',
+        protected: 'This page is password protected.',
+        password: 'Password',
+        showPassword: 'Show',
+        hidePassword: 'Hide',
+        showPasswordLabel: 'Show password',
+        hidePasswordLabel: 'Hide password',
+        unlock: 'Unlock',
+        unlocking: 'Unlocking…',
+        wrongPassword: 'Incorrect password. Try again.',
+        missingPayload: 'The encrypted content is missing or invalid.',
+        missingCrypto: 'This browser does not support decryption.',
+        language: 'Language',
+    },
+    'zh-CN': {
+        title: '受密码保护的页面',
+        protected: '此页面受密码保护。',
+        password: '输入密码',
+        showPassword: '显示',
+        hidePassword: '隐藏',
+        showPasswordLabel: '显示密码',
+        hidePasswordLabel: '隐藏密码',
+        unlock: '解锁',
+        unlocking: '正在解锁…',
+        wrongPassword: '密码不正确，请重试。',
+        missingPayload: '加密内容缺失或无效。',
+        missingCrypto: '此浏览器不支持解密。',
+        language: '语言',
+    },
+};
+let language = document.documentElement.lang === 'zh-CN' ? 'zh-CN' : 'en';
+let message = 'protected';
+let busy = false;
+let ready = false;
+function render() {
+    const text = messages[language];
+    document.documentElement.lang = language;
+    document.title = text.title;
+    languageSelect.value = language;
+    languageSelect.setAttribute('aria-label', text.language);
+    msg.textContent = text[message];
+    msg.classList.toggle('error', message !== 'protected');
+    pwd.placeholder = text.password;
+    pwd.setAttribute('aria-label', text.password);
+    pwd.setAttribute('aria-invalid', String(message === 'wrongPassword'));
+    pwd.disabled = busy || !ready;
+    const passwordVisible = pwd.type === 'text';
+    togglePassword.textContent = passwordVisible ? text.hidePassword : text.showPassword;
+    togglePassword.setAttribute('aria-label', passwordVisible ? text.hidePasswordLabel : text.showPasswordLabel);
+    togglePassword.setAttribute('aria-pressed', String(passwordVisible));
+    togglePassword.disabled = busy || !ready;
+    unlock.value = busy ? text.unlocking : text.unlock;
+    unlock.disabled = busy || !ready;
+    form.setAttribute('aria-busy', String(busy));
+}
+languageSelect.addEventListener('change', () => {
+    language = languageSelect.value === 'zh-CN' ? 'zh-CN' : 'en';
+    render();
+});
+togglePassword.addEventListener('click', () => {
+    pwd.type = pwd.type === 'password' ? 'text' : 'password';
+    render();
+    pwd.focus();
+});
+pwd.addEventListener('input', () => {
+    if (message === 'wrongPassword') {
+        message = 'protected';
+        render();
+    }
+});
+render();
+let salt, iv, ciphertext, iterations;
+const subtle = window.crypto?.subtle ||
+    window.crypto?.webkitSubtle;
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!subtle) {
+        message = 'missingCrypto';
+        render();
+        return;
+    }
+    const payload = document.querySelector('pre[data-i]');
+    try {
+        if (!payload?.textContent)
+            throw new Error('Missing payload');
+        iterations = Number(payload.dataset.i);
+        const bytes = parse(payload.textContent.trim());
+        salt = bytes.slice(0, 32);
+        iv = bytes.slice(32, 48);
+        ciphertext = bytes.slice(48);
+    }
+    catch {
+        message = 'missingPayload';
+        render();
+        return;
+    }
+    ready = true;
+    render();
+    pwd.focus();
+});
+form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    await decrypt();
+});
+async function decrypt() {
+    if (!ready || busy)
+        return;
+    busy = true;
+    message = 'protected';
+    render();
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    try {
+        const decrypted = await decryptFile({ salt, iv, ciphertext, iterations }, pwd.value);
+        document.write(decrypted);
+        document.close();
+    }
+    catch {
+        message = 'wrongPassword';
+        busy = false;
+        pwd.value = '';
+        render();
+        pwd.focus();
+    }
+}
+async function deriveKey(salt, password, iterations) {
+    const encoder = new TextEncoder();
+    const baseKey = await subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, [
+        'deriveKey',
+    ]);
+    return await subtle.deriveKey({ name: 'PBKDF2', salt, iterations, hash: 'SHA-256' }, baseKey, { name: 'AES-GCM', length: 256 }, true, ['decrypt']);
+}
+async function importKey(key) {
+    return subtle.importKey('jwk', key, 'AES-GCM', true, ['decrypt']);
+}
+async function decryptFile({ salt, iv, ciphertext, iterations, }, password) {
+    const decoder = new TextDecoder();
+    const key = await deriveKey(salt, password, iterations);
+    const data = new Uint8Array(await subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext));
+    if (!data)
+        throw 'Malformed data';
+    // If no exception were thrown, decryption succeded and we can save the key.
+    return decoder.decode(data);
+}
+</script><style>*,:before,:after{box-sizing:border-box;border:0}html{-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Noto Sans,Ubuntu,Cantarell,Helvetica Neue,Arial,sans-serif;line-height:1.5}body{line-height:inherit;margin:0}a{color:inherit;-webkit-text-decoration:inherit;text-decoration:inherit}button,input{font-family:inherit;font-size:100%;line-height:inherit;color:inherit;margin:0;padding:0}button{text-transform:none;-webkit-appearance:button}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}p{margin:0}input::-moz-placeholder{opacity:1}input:-ms-placeholder-shown{opacity:1}input::-ms-input-placeholder{opacity:1}input::placeholder{opacity:1}:disabled{cursor:default}svg{vertical-align:middle;display:block}[hidden]{display:none}:root{--lightningcss-light:initial;--lightningcss-dark: ;color-scheme:light;color:#202124;font-synthesis:none;-webkit-font-smoothing:antialiased;background:#f6f7f8;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,Microsoft YaHei,sans-serif}body{min-width:280px;margin:0}main{min-height:100vh;align-items:center;justify-items:center;min-height:100svh;padding:88px 24px;display:grid}.box{background:#fff;border:1px solid #e7e9ec;border-radius:20px;width:100%;max-width:400px;padding:36px 32px 32px;box-shadow:0 4px 24px rgba(32,33,36,.016)}header{margin-bottom:28px}#msg{letter-spacing:-.025em;font-size:19px;font-weight:500;line-height:1.5}#msg.error{color:#bc3636}form{gap:12px;display:grid}.password-row{grid-template-columns:minmax(0,1fr) auto;gap:10px;display:grid}#pwd,#unlock,#toggle-password{border-radius:10px;width:100%;min-height:48px;font-family:inherit;font-size:15px;line-height:1.5;transition:border-color .15s,background-color .15s,box-shadow .15s}#pwd{color:#202124;background:#fff;border:1px solid #dfe2e6;padding:12px 14px;font-size:16px}#pwd::-ms-input-placeholder{color:#92979f;opacity:1}#pwd::placeholder{color:#92979f;opacity:1}#pwd:hover:not(:disabled){border-color:#b9bec6}#pwd:focus{border-color:#9098a3;outline:none;box-shadow:0 0 0 3px rgba(32,33,36,.035)}#pwd[aria-invalid=true]{border-color:#d89090}#unlock{color:#fff;cursor:pointer;background:#25272b;border:1px solid #25272b;padding:12px 16px;font-weight:500}#unlock:hover:not(:disabled){background:#3a3d43;border-color:#3a3d43}#unlock:active:not(:disabled){background:#151619}#unlock:disabled{opacity:.6;cursor:wait}#toggle-password{color:#39423d;cursor:pointer;background:#fff;border:1px solid #dfe2e6;min-width:76px;padding:12px 14px;font-size:13px;font-weight:500}#toggle-password:hover:not(:disabled){background:#f9faf9;border-color:#b9bec6}#toggle-password:disabled{opacity:.6;cursor:wait}#language{color:#61666e;cursor:pointer;background:#fff;border:1px solid #e2e5e9;border-radius:9px;max-width:calc(100% - 48px);min-height:36px;padding:6px 10px;font-family:inherit;font-size:13px;line-height:1.5;position:absolute;top:24px;right:24px}#unlock:focus-visible{outline-offset:3px;outline:2px solid #7c8796}#toggle-password:focus-visible{outline-offset:3px;outline:2px solid #7c8796}#language:focus-visible{outline-offset:3px;outline:2px solid #7c8796}.hidden{display:none!important}@media (max-width:480px){main{padding:80px 20px}.box{border-radius:16px;padding:30px 24px 24px}#msg{font-size:18px}#language{top:20px;right:20px}}@media (prefers-reduced-motion:reduce){#pwd,#unlock,#toggle-password{transition:none}}</style></head><body><select id=language aria-label=Language><option value=en lang=en>English</option><option value=zh-CN lang=zh-CN>简体中文</option></select><main><div class=box><header><p id=msg role=status aria-live=polite>This page is password protected.</p></header><form><div class=password-row><input type=password id=pwd name=pwd aria-label=Password placeholder=Password autocomplete=current-password spellcheck=false disabled> <button id=toggle-password type=button aria-label="Show password" aria-pressed=false disabled>Show</button></div><input id=unlock type=submit value=Unlock disabled></form></div></main><pre class="hidden" data-i="2e+6">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</pre></body></html>
