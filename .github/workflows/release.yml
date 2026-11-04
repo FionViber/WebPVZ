@@ -7,13 +7,17 @@ on:
         description: Publish packages already attached to the draft
         type: boolean
         default: false
+      web_only:
+        description: Update protected web packages only
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
   desktop:
-    if: ${{ !inputs.publish_only }}
+    if: ${{ !inputs.publish_only && !inputs.web_only }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -48,7 +52,7 @@ jobs:
 
   publish:
     needs: [desktop, web]
-    if: ${{ always() && !cancelled() && (inputs.publish_only || (needs.desktop.result == 'success' && needs.web.result == 'success')) }}
+    if: ${{ always() && !cancelled() && (inputs.publish_only || ((needs.desktop.result == 'success' || inputs.web_only) && needs.web.result == 'success')) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
