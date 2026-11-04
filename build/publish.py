@@ -3,7 +3,7 @@ import hashlib,json,os,subprocess
 
 def gh(*args):return subprocess.check_output(['gh',*args])
 repo=os.environ['GITHUB_REPOSITORY'];base=f'repos/{repo}'
-release=json.loads(gh('api',base+'/releases/tags/v1.0.0'))
+release=next(r for r in json.loads(gh('api',base+'/releases?per_page=100')) if r['tag_name']=='v1.0.0')
 expected={f'WebPVZ-1.0.0-{lang}-{platform}-{arch}.zip' for lang in ['EN','SC'] for platform,arch in [('Windows','x64'),('macOS','x64'),('macOS','arm64'),('Linux','x64'),('Linux','arm64')]}
 expected|={f'WebPVZ-1.0.0-{lang}-Web.zip' for lang in ['EN','SC']}
 assets={a['name']:a for a in release['assets'] if a['state']=='uploaded'}

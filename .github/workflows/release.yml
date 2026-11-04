@@ -2,12 +2,18 @@ name: Package release
 
 on:
   workflow_dispatch:
+    inputs:
+      publish_only:
+        description: Publish packages already attached to the draft
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
   desktop:
+    if: ${{ !inputs.publish_only }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -26,6 +32,7 @@ jobs:
         run: gh release upload v1.0.0 out/*.zip --clobber
 
   web:
+    if: ${{ !inputs.publish_only }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +48,7 @@ jobs:
 
   publish:
     needs: [desktop, web]
+    if: ${{ always() && !cancelled() && (inputs.publish_only || (needs.desktop.result == 'success' && needs.web.result == 'success')) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
