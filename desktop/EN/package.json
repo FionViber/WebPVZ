@@ -1,0 +1,13 @@
+{
+  "name": "pvzgoty-en",
+  "productName": "PVZGOTY-EN",
+  "version": "1.0.0",
+  "main": "main.cjs",
+  "private": true,
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "45.2.2"
+  }
+}

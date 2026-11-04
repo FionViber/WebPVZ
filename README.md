@@ -2,11 +2,11 @@
 
 Plants vs. Zombies: Game of the Year Edition for the browser and desktop.
 
-[Play in English](https://fionviber.github.io/WebPVZ/) · [Play in Simplified Chinese](https://fionviber.github.io/WebPVZ/zh-cn/) · [Download](https://github.com/FionViber/WebPVZ/releases/latest)
+[Play online](https://fionviber.github.io/WebPVZ/) · [Download](https://github.com/FionViber/WebPVZ/releases/latest)
 
 ## Browser
 
-The main link opens the English edition. Both browser editions require the page password. Game progress is stored in your browser; clearing site data removes it. The two editions have separate saves.
+GitHub Pages hosts the English edition. English and Simplified Chinese web archives are available in Releases. Both browser editions require the page password. Game progress is stored in your browser; clearing site data removes it.
 
 To use a downloaded web edition, extract the whole archive and open `index.html` in a current browser. Keep the `assets` and `default-save` folders alongside it.
 
@@ -31,10 +31,9 @@ English and Simplified Chinese desktop editions keep separate save folders. Do n
 ## Files
 
 - `docs/`: password-protected English browser edition, published with GitHub Pages.
-- `docs/zh-cn/`: password-protected Simplified Chinese browser edition.
 - `desktop/EN/` and `desktop/SC/`: Electron application source, game files and icons.
 - Release assets: desktop packages, protected web archives and `SHA256SUMS.txt`.
 
 To run a desktop edition from source, open its folder, run `npm install`, then `npm start`. Both editions use Electron 45.2.2.
 
-PageCrypt 7.1.0 encrypts the browser entry pages. It does not encrypt the game assets or the desktop source. Passwords are not included in this repository. Desktop packages retain the supplied files unchanged. The `1.0.0` release number identifies this distribution.
+PageCrypt 7.1.0 encrypts the browser entry pages. It does not encrypt the game assets or the desktop source. Passwords are not included in this repository. Desktop packages and the game's save handling retain the supplied behaviour. The `1.0.0` release number identifies this distribution.
